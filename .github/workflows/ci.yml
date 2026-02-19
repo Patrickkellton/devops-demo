@@ -13,7 +13,7 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Setup Docker
+    - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
     - name: Build Backend Image
@@ -21,3 +21,19 @@ jobs:
 
     - name: Build Frontend Image
       run: docker build -t streamlit-app ./frontend
+
+    - name: Login to JFrog
+      run: |
+        echo "${{ secrets.JFROG_TOKEN }}" | docker login ${{ secrets.JFROG_URL }} \
+        --username ${{ secrets.JFROG_USERNAME }} \
+        --password-stdin
+
+    - name: Tag Images
+      run: |
+        docker tag fastapi-app ${{ secrets.JFROG_URL }}/docker-local/fastapi-app:${{ github.sha }}
+        docker tag streamlit-app ${{ secrets.JFROG_URL }}/docker-local/streamlit-app:${{ github.sha }}
+
+    - name: Push Images
+      run: |
+        docker push ${{ secrets.JFROG_URL }}/docker-local/fastapi-app:${{ github.sha }}
+        docker push ${{ secrets.JFROG_URL }}/docker-local/streamlit-app:${{ github.sha }}
